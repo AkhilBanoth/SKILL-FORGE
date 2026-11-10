@@ -8,6 +8,7 @@ type J = any
 
 export const token = { get: () => localStorage.getItem('sf_token'), set: (t: string) => localStorage.setItem('sf_token', t), clear: () => localStorage.removeItem('sf_token') }
 export const session = { role: 'student' }
+export const catalog: { id: number; name: string; category: string }[] = []
 
 export async function api(path: string, body?: unknown, method = body ? 'POST' : 'GET'): Promise<J> {
   const headers: Record<string, string> = {}
@@ -23,11 +24,28 @@ export async function api(path: string, body?: unknown, method = body ? 'POST' :
   return res.status === 204 ? null : res.json()
 }
 
-export async function signIn(email: string, password: string) {
-  const { access_token } = await api('/auth/login', { email, password })
-  token.set(access_token)
-  await loadLive()
+export async function apiForm(path: string, form: FormData): Promise<J> {
+  const res = await fetch(BASE + path, { method: 'POST', headers: token.get() ? { Authorization: `Bearer ${token.get()}` } : {}, body: form })
+  if (res.status === 401 && token.get()) { token.clear(); location.assign('/login') }
+  if (!res.ok) {
+    let msg = res.statusText
+    try { const j = await res.json(); msg = typeof j.detail === 'string' ? j.detail : j.detail?.map((d: J) => d.msg).join('; ') || msg } catch { /* keep status text */ }
+    throw new Error(msg)
+  }
+  return res.json()
 }
+
+
+export async function signIn(email: string, password: string) {
+  const response = await api('/auth/login', { email, password });
+
+  if (!response?.access_token) {
+    throw new Error('Login failed: access token missing');
+  }
+
+  token.set(response.access_token);
+}
+
 export async function signUp(full_name: string, email: string, password: string) {
   await api('/auth/register', { full_name, email, password })
   await signIn(email, password)
@@ -42,12 +60,13 @@ const fmt = (d?: string) => (d ? new Date(d).toLocaleDateString('en', { month: '
 
 export async function loadLive() {
   const me = await api('/users/me')
-  const [catalog, mine, cs, recs, dash, certs, notes, assess, attempts, projs, subs, prog, crs]: J[] = await Promise.all([
+  const [rawCatalog, mine, cs, recs, dash, certs, notes, assess, attempts, projs, subs, prog, crs]: J[] = await Promise.all([
     safe(api('/skills'), []), safe(api('/users/me/skills'), []), safe(api('/careers'), []), safe(api('/recommendations/careers'), { recommendations: [] }),
     safe(api('/analytics/my-dashboard'), null), safe(api('/certifications/my'), []), safe(api('/notifications/my'), []), safe(api('/assessments'), []),
     safe(api('/assessments/attempts'), []), safe(api('/projects'), []), safe(api('/project-submissions/my'), []), safe(api('/courses/progress'), []), safe(api('/courses'), []),
   ])
-  const skillById = new Map<number, J>(catalog.map((s: J) => [s.id, s]))
+  fill(catalog, rawCatalog.map((s: J) => ({ id: s.id, name: s.name, category: s.category })))
+  const skillById = new Map<number, J>(rawCatalog.map((s: J) => [s.id, s]))
   const levelBySkill = new Map<number, number>(mine.map((u: J) => [u.skill_id, u.level]))
   const topCareer = recs.recommendations?.[0]?.career_title
 
@@ -92,5 +111,10 @@ export async function loadLive() {
     { label: 'Certificates', value: String(certs.length), change: '' },
   ])
   fill(weeklyLearning, weeklyLearning.map((d) => ({ ...d, hours: 0 })))
-  fill(activity, [])
+  const feed = [
+    ...attempts.filter((a: J) => a.status === 'submitted').map((a: J) => ({ at: a.submitted_at, kind: 'assessment' as const, title: `Completed “${assess.find((x: J) => x.id === a.assessment_id)?.title ?? 'an assessment'}”`, detail: `Score ${Math.round((a.score / a.max_score) * 100)}%` })),
+    ...subs.map((x: J) => ({ at: x.submitted_at, kind: 'course' as const, title: `Submitted “${projs.find((p: J) => p.id === x.project_id)?.title ?? 'a project'}”`, detail: String(x.status).replace('_', ' ') })),
+    ...certs.filter((c: J) => !c.is_revoked).map((c: J) => ({ at: c.issued_at, kind: 'certificate' as const, title: `Earned “${c.title}”`, detail: 'Certificate issued' })),
+  ].sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 6)
+  fill(activity, feed.map((f, i) => ({ id: `act-${i}`, title: f.title, detail: f.detail, time: fmt(f.at), kind: f.kind })) as unknown as typeof activity)
 }

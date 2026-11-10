@@ -1,32 +1,17 @@
-# React + TypeScript + Vite
+# SkillForge frontend (React + Vite + TypeScript)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Connected to the SKILLFORGE FastAPI backend.
 
-Currently, two official plugins are available:
+    npm install
+    npm run dev        # http://localhost:5173  (proxies /api -> localhost:8000)
+    npm run build
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Run the backend first: `uvicorn app.main:app --reload --port 8000`.
+Production: set `VITE_API_URL` and enable CORS on the backend (see below).
 
-## React Compiler
+First admin: register a user, then set `role='admin'` in the users table.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+CORS (backend `app/main.py`, only needed when not using the dev proxy):
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(CORSMiddleware, allow_origins=["https://your-frontend"], allow_methods=["*"], allow_headers=["*"])
