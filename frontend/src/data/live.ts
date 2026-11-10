@@ -44,6 +44,13 @@ export async function signIn(email: string, password: string) {
   }
 
   token.set(response.access_token);
+
+  try {
+    await loadLive();
+  } catch (error) {
+    token.clear();
+    throw error;
+  }
 }
 
 export async function signUp(full_name: string, email: string, password: string) {
