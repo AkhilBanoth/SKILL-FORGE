@@ -37,22 +37,60 @@ export async function apiForm(path: string, form: FormData): Promise<J> {
 
 
 export async function signIn(email: string, password: string) {
-  const response = await api('/auth/login', { email, password });
+  const response = await api('/auth/login', { email, password })
 
   if (!response?.access_token) {
-    throw new Error('Login failed: access token missing');
+    throw new Error('Login failed: access token missing')
   }
 
-  token.set(response.access_token);
+  token.set(response.access_token)
+
+  // Clear data belonging to the previous account.
+  fill(skills, [])
+  fill(careers, [])
+  fill(courses, [])
+  fill(assessments, [])
+  fill(projects, [])
+  fill(certificates, [])
+  fill(appNotifications, [])
+  fill(activity, [])
+  fill(learnerStats, [])
+  fill(weeklyLearning, [])
+  fill(catalog, [])
+
+  Object.assign(learner, {
+    name: 'Learner',
+    email: '',
+    role: 'SkillForge learner',
+    joined: '',
+    streak: 0,
+    hours: 0,
+  })
 
   try {
-    await loadLive();
+    const me = await api('/users/me')
+
+    session.role = me.role
+    Object.assign(learner, {
+      name: me.full_name,
+      email: me.email,
+      role: 'SkillForge learner',
+      joined: me.created_at
+        ? new Date(me.created_at).toLocaleDateString('en', {
+            month: 'long',
+            year: 'numeric',
+          })
+        : '',
+    })
+
+    void loadLive().catch((error) => {
+      console.error('Dashboard data loading failed:', error)
+    })
   } catch (error) {
-    token.clear();
-    throw error;
+    token.clear()
+    throw error
   }
 }
-
 export async function signUp(full_name: string, email: string, password: string) {
   await api('/auth/register', { full_name, email, password })
   await signIn(email, password)
