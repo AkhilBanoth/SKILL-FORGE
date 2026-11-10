@@ -1,14 +1,11 @@
+
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
-
 
 from app.config import settings
 from app.database.mongodb import check_mongodb, close_mongodb
 from app.database.postgres import Base, engine
-
-
 
 # Import models so SQLAlchemy can register the database tables.
 from app.models import project
@@ -77,11 +74,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS configuration for local development and deployed frontend.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://skill-forge-mi6w.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
