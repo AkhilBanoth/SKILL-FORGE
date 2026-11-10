@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+﻿from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
 def require_admin(current_user: User):
-    if current_user.role != "admin":
+    if (current_user.role or "").strip().lower() != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",

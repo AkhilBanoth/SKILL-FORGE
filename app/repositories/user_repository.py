@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+﻿from sqlalchemy.orm import Session
 from app.models.user import User
 
 def get_user_by_email(db: Session, email: str,) -> User | None: return db.query(User).filter(User.email == email).first()
@@ -14,7 +14,7 @@ def create_user(
         full_name=full_name,
         email=email.lower(),
         hashed_password=hashed_password,
-        role="Learner",
+        role="learner",
         is_active=True,
     )
     db.add(user)

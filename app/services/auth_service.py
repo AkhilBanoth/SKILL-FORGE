@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+﻿from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.repositories.user_repository import (
@@ -45,6 +45,7 @@ def login_user(
     db: Session,
     email: str,
     password: str,
+    role: str | None = None,
 ):
     normalized_email = email.lower().strip()
 
@@ -72,6 +73,14 @@ def login_user(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive",
+        )
+
+    actual_role = (user.role or "").strip().lower()
+
+    if role is not None and actual_role != role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account does not have the selected login role",
         )
 
     access_token = create_access_token(user.id)

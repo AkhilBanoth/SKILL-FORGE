@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+﻿from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/certifications", tags=["Certifications"])
 
 
 def require_admin(current_user: User):
-    if current_user.role != "admin":
+    if (current_user.role or "").strip().lower() != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
@@ -75,7 +75,7 @@ def get_certificate(
 ):
     certification = get_certification(db, certification_id)
 
-    if current_user.role != "admin" and certification.user_id != current_user.id:
+    if (current_user.role or "").strip().lower() != "admin" and certification.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     return certification

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
@@ -42,4 +42,7 @@ def login(
         db=db,
         email=str(payload.email),
         password=payload.password,
+        role=payload.role,
     )
+
+

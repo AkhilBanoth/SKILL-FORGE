@@ -1,4 +1,4 @@
-// Connects the SkillForge UI to the FastAPI backend.
+﻿// Connects the SkillForge UI to the FastAPI backend.
 // After login, loadLive() fetches real data and fills the same exported datasets the pages already read.
 import { activity, appNotifications, assessments, careers, certificates, courses, learner, learnerStats, projects, skills, weeklyLearning } from './mockData'
 
@@ -36,8 +36,8 @@ export async function apiForm(path: string, form: FormData): Promise<J> {
 }
 
 
-export async function signIn(email: string, password: string) {
-  const response = await api('/auth/login', { email, password })
+export async function signIn(email: string, password: string, role?: 'admin' | 'learner') {
+  const response = await api('/auth/login', { email, password, ...(role ? { role } : {}) })
 
   if (!response?.access_token) {
     throw new Error('Login failed: access token missing')
@@ -70,7 +70,7 @@ export async function signIn(email: string, password: string) {
   try {
     const me = await api('/users/me')
 
-    session.role = me.role
+    session.role = String(me.role || '').trim().toLowerCase()
     Object.assign(learner, {
       name: me.full_name,
       email: me.email,
@@ -115,13 +115,13 @@ export async function loadLive() {
   const levelBySkill = new Map<number, number>(mine.map((u: J) => [u.skill_id, u.level]))
   const topCareer = recs.recommendations?.[0]?.career_title
 
-  session.role = me.role
+  session.role = String(me.role || '').trim().toLowerCase()
   Object.assign(learner, { name: me.full_name, email: me.email, role: topCareer ? `Aspiring ${topCareer.toLowerCase()}` : 'SkillForge learner', joined: new Date(me.created_at).toLocaleDateString('en', { month: 'long', year: 'numeric' }), streak: 0, hours: 0 })
 
   fill(skills, mine.map((u: J, i: number) => ({ id: String(u.id), name: skillById.get(u.skill_id)?.name ?? `Skill ${u.skill_id}`, category: skillById.get(u.skill_id)?.category ?? 'General', proficiency: u.level, level: levelOf(u.level), trend: 0, color: COLORS[i % COLORS.length] })))
 
   const careerSkills: J[] = await Promise.all(cs.map((c: J) => safe(api(`/careers/${c.id}/skills`), [])))
-  fill(careers, cs.map((c: J, i: number) => ({ id: String(c.id), title: c.title, family: 'Career path', match: Math.round(recs.recommendations?.find((r: J) => r.career_id === c.id)?.match_score ?? 0), salary: '—', demand: 'Open path', description: c.description ?? '', skills: careerSkills[i].map((s: J) => ({ name: skillById.get(s.skill_id)?.name ?? `Skill ${s.skill_id}`, required: s.weight, current: levelBySkill.get(s.skill_id) ?? 0 })) })))
+  fill(careers, cs.map((c: J, i: number) => ({ id: String(c.id), title: c.title, family: 'Career path', match: Math.round(recs.recommendations?.find((r: J) => r.career_id === c.id)?.match_score ?? 0), salary: 'â€”', demand: 'Open path', description: c.description ?? '', skills: careerSkills[i].map((s: J) => ({ name: skillById.get(s.skill_id)?.name ?? `Skill ${s.skill_id}`, required: s.weight, current: levelBySkill.get(s.skill_id) ?? 0 })) })))
 
   const modules: J[] = await Promise.all(crs.map(async (c: J) => {
     const ms: J[] = await safe(api(`/courses/${c.id}/modules`), [])
@@ -139,12 +139,12 @@ export async function loadLive() {
   fill(assessments, assess.map((a: J, i: number) => {
     const at = attempts.filter((x: J) => x.assessment_id === a.id).pop()
     const pct = at && at.status === 'submitted' ? Math.round((at.score / at.max_score) * 100) : undefined
-    return { id: String(a.id), title: a.title, skill: 'General', questions: counts[i].length, duration: '—', score: pct, status: pct === undefined ? (at ? 'In progress' : 'Ready') : pct >= 70 ? 'Passed' : 'Needs practice', date: fmt(at?.submitted_at ?? a.created_at) } as (typeof assessments)[number]
+    return { id: String(a.id), title: a.title, skill: 'General', questions: counts[i].length, duration: 'â€”', score: pct, status: pct === undefined ? (at ? 'In progress' : 'Ready') : pct >= 70 ? 'Passed' : 'Needs practice', date: fmt(at?.submitted_at ?? a.created_at) } as (typeof assessments)[number]
   }))
 
   fill(projects, projs.map((p: J) => {
     const s = subs.find((x: J) => x.project_id === p.id)
-    return { id: String(p.id), title: p.title, category: 'Project', level: p.difficulty, duration: '—', skills: p.required_skills ? p.required_skills.split(',').map((x: string) => x.trim()) : [], description: p.description, status: s ? (s.status === 'approved' ? 'Approved' : 'In review') : 'Available', score: s?.score ?? undefined } as (typeof projects)[number]
+    return { id: String(p.id), title: p.title, category: 'Project', level: p.difficulty, duration: 'â€”', skills: p.required_skills ? p.required_skills.split(',').map((x: string) => x.trim()) : [], description: p.description, status: s ? (s.status === 'approved' ? 'Approved' : 'In review') : 'Available', score: s?.score ?? undefined } as (typeof projects)[number]
   }))
   fill(certificates, certs.filter((c: J) => !c.is_revoked).map((c: J) => ({ id: String(c.id), title: c.title, issuer: 'SkillForge', date: fmt(c.issued_at), code: c.certificate_code, skills: [] })))
   fill(appNotifications, notes.map((n: J) => ({ id: String(n.id), title: n.title, description: n.message, date: new Date(n.created_at).toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' }), group: new Date(n.created_at).toDateString() === new Date().toDateString() ? 'Today' : 'Earlier', unread: !n.is_read, kind: 'mentor' as const })))
@@ -157,9 +157,10 @@ export async function loadLive() {
   ])
   fill(weeklyLearning, weeklyLearning.map((d) => ({ ...d, hours: 0 })))
   const feed = [
-    ...attempts.filter((a: J) => a.status === 'submitted').map((a: J) => ({ at: a.submitted_at, kind: 'assessment' as const, title: `Completed “${assess.find((x: J) => x.id === a.assessment_id)?.title ?? 'an assessment'}”`, detail: `Score ${Math.round((a.score / a.max_score) * 100)}%` })),
-    ...subs.map((x: J) => ({ at: x.submitted_at, kind: 'course' as const, title: `Submitted “${projs.find((p: J) => p.id === x.project_id)?.title ?? 'a project'}”`, detail: String(x.status).replace('_', ' ') })),
-    ...certs.filter((c: J) => !c.is_revoked).map((c: J) => ({ at: c.issued_at, kind: 'certificate' as const, title: `Earned “${c.title}”`, detail: 'Certificate issued' })),
+    ...attempts.filter((a: J) => a.status === 'submitted').map((a: J) => ({ at: a.submitted_at, kind: 'assessment' as const, title: `Completed â€œ${assess.find((x: J) => x.id === a.assessment_id)?.title ?? 'an assessment'}â€`, detail: `Score ${Math.round((a.score / a.max_score) * 100)}%` })),
+    ...subs.map((x: J) => ({ at: x.submitted_at, kind: 'course' as const, title: `Submitted â€œ${projs.find((p: J) => p.id === x.project_id)?.title ?? 'a project'}â€`, detail: String(x.status).replace('_', ' ') })),
+    ...certs.filter((c: J) => !c.is_revoked).map((c: J) => ({ at: c.issued_at, kind: 'certificate' as const, title: `Earned â€œ${c.title}â€`, detail: 'Certificate issued' })),
   ].sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 6)
   fill(activity, feed.map((f, i) => ({ id: `act-${i}`, title: f.title, detail: f.detail, time: fmt(f.at), kind: f.kind })) as unknown as typeof activity)
 }
+
