@@ -1,18 +1,23 @@
 
 from datetime import datetime
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api import assignments as assignments_api
 from app.database.postgres import get_db
+from app.dependencies import get_current_user
 
 
-def create_test_client():
+def create_test_client(role="admin"):
     app = FastAPI()
     app.include_router(assignments_api.router)
 
     app.dependency_overrides[get_db] = lambda: None
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
+        id=1, role=role, is_active=True
+    )
 
     return TestClient(app)
 
@@ -136,3 +141,18 @@ def test_create_assignment_rejects_invalid_max_score():
     )
 
     assert response.status_code == 422
+
+
+def test_create_assignment_denied_for_learner():
+    client = create_test_client(role="learner")
+
+    response = client.post(
+        "/lessons/1/assignments",
+        json={
+            "title": "Python Practice",
+            "description": "Practice Python fundamentals",
+            "max_score": 100,
+        },
+    )
+
+    assert response.status_code == 403

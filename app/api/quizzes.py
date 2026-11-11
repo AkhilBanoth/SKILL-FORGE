@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
+from app.models.user import User
 from app.schemas.quiz import QuizCreate, QuizResponse
+from app.security.rbac import require_role
 from app.services.quiz_service import (
     create_new_quiz,
     get_quiz,
@@ -24,6 +26,7 @@ def create_quiz_endpoint(
     lesson_id: int,
     payload: QuizCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return create_new_quiz(
         db=db,

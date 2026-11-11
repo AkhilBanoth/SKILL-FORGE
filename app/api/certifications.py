@@ -5,6 +5,7 @@ from app.database.postgres import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.certification import CertificationCreate, CertificationResponse
+from app.security.rbac import require_role
 from app.services.certification_service import (
     issue_certification,
     list_user_certifications,
@@ -17,21 +18,12 @@ from app.services.certification_service import (
 router = APIRouter(prefix="/certifications", tags=["Certifications"])
 
 
-def require_admin(current_user: User):
-    if (current_user.role or "").strip().lower() != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-
-
 @router.post("/", response_model=CertificationResponse, status_code=status.HTTP_201_CREATED)
 def create_certificate(
     certification_data: CertificationCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("admin")),
 ):
-    require_admin(current_user)
 
     try:
         return issue_certification(db, certification_data)
@@ -61,9 +53,8 @@ def verify_certificate(
 @router.get("/", response_model=list[CertificationResponse])
 def get_certifications(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("admin")),
 ):
-    require_admin(current_user)
     return list_all_certifications(db)
 
 
@@ -85,10 +76,8 @@ def get_certificate(
 def revoke_certificate(
     certification_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("admin")),
 ):
-    require_admin(current_user)
-
     try:
         return revoke_user_certification(db, certification_id)
     except ValueError as exc:

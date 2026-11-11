@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
+from app.models.user import User
 from app.schemas.course_module import (
     CourseModuleCreate,
     CourseModuleResponse,
 )
+from app.security.rbac import require_role
 from app.services.course_module_service import (
     create_new_course_module,
     get_course_module,
@@ -28,6 +30,7 @@ def create_module(
     course_id: int,
     payload: CourseModuleCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return create_new_course_module(
         db=db,

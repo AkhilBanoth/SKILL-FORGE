@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
+from app.models.user import User
+from app.security.rbac import require_role
 from app.schemas.career import CareerCreate, CareerResponse
 from app.schemas.career_skill import (
     CareerSkillCreate,
@@ -32,6 +34,7 @@ router = APIRouter(
 def create_career_endpoint(
     payload: CareerCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return create_new_career(
         db=db,
@@ -73,6 +76,7 @@ def add_skill_to_career_endpoint(
     career_id: int,
     payload: CareerSkillCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return add_skill_to_career(
         db=db,

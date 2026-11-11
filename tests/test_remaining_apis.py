@@ -11,6 +11,7 @@ from app.api import ai_mentor as mentor_api
 from app.api import analytics as analytics_api
 from app.api import assessment_skills as assessment_skills_api
 from app.api import careers as careers_api
+from app.api import courses as courses_api
 from app.api import lessons as lessons_api
 from app.api import notifications as notifications_api
 from app.api import project_submissions as submissions_api
@@ -27,13 +28,13 @@ NOW = datetime.now(timezone.utc)
 
 # ---------------- SHARED TEST SETUP ----------------
 
-def create_client(router, user=None, admin=None):
+def create_client(router, user=None, admin=None, role="learner"):
     app = FastAPI()
     app.include_router(router)
 
     test_user = user or SimpleNamespace(
         id=1,
-        role="learner",
+        role=role,
         is_active=True,
     )
 
@@ -129,6 +130,26 @@ def test_admin_user_details_not_found():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
+
+
+def test_course_creation_requires_admin():
+    app = FastAPI()
+    app.include_router(courses_api.router)
+    app.dependency_overrides[get_db] = lambda: FakeDB()
+
+    client = TestClient(app)
+    response = client.post(
+        "/courses",
+        json={
+            "title": "Advanced Python",
+            "description": "Python fundamentals",
+            "skill_id": 1,
+            "level": "Intermediate",
+            "duration_hours": 5,
+        },
+    )
+
+    assert response.status_code == 401
 
 
 # ---------------- AI LEARNING RECOMMENDATIONS ----------------
@@ -235,7 +256,7 @@ def test_assessment_skill_evaluation_success(monkeypatch):
 # ---------------- CAREERS ----------------
 
 def test_create_career_success(monkeypatch):
-    client = create_client(careers_api.router)
+    client = create_client(careers_api.router, role="admin")
 
     expected = {
         "id": 1,
@@ -263,7 +284,7 @@ def test_create_career_success(monkeypatch):
 
 
 def test_create_career_rejects_short_title():
-    client = create_client(careers_api.router)
+    client = create_client(careers_api.router, role="admin")
 
     response = client.post(
         "/careers",
@@ -298,7 +319,7 @@ def test_list_careers_success(monkeypatch):
 # ---------------- LESSONS ----------------
 
 def test_create_lesson_success(monkeypatch):
-    client = create_client(lessons_api.router)
+    client = create_client(lessons_api.router, role="admin")
 
     expected = {
         "id": 1,
@@ -331,7 +352,7 @@ def test_create_lesson_success(monkeypatch):
 
 
 def test_create_lesson_rejects_invalid_duration():
-    client = create_client(lessons_api.router)
+    client = create_client(lessons_api.router, role="admin")
 
     response = client.post(
         "/modules/2/lessons",
@@ -492,7 +513,7 @@ def test_project_submission_invalid_id():
 # ---------------- QUIZZES ----------------
 
 def test_create_quiz_success(monkeypatch):
-    client = create_client(quizzes_api.router)
+    client = create_client(quizzes_api.router, role="admin")
 
     expected = {
         "id": 1,
@@ -523,7 +544,7 @@ def test_create_quiz_success(monkeypatch):
 
 
 def test_create_quiz_rejects_invalid_score():
-    client = create_client(quizzes_api.router)
+    client = create_client(quizzes_api.router, role="admin")
 
     response = client.post(
         "/lessons/3/quizzes",
@@ -565,7 +586,7 @@ def test_career_recommendations_success(monkeypatch):
 # ---------------- RESOURCES ----------------
 
 def test_create_resource_success(monkeypatch):
-    client = create_client(resources_api.router)
+    client = create_client(resources_api.router, role="admin")
 
     expected = {
         "id": 1,
@@ -596,7 +617,7 @@ def test_create_resource_success(monkeypatch):
 
 
 def test_create_resource_rejects_short_title():
-    client = create_client(resources_api.router)
+    client = create_client(resources_api.router, role="admin")
 
     response = client.post(
         "/lessons/3/resources",
@@ -608,3 +629,47 @@ def test_create_resource_rejects_short_title():
     )
 
     assert response.status_code == 422
+
+
+def test_create_career_denied_for_learner():
+    client = create_client(careers_api.router)
+
+    response = client.post(
+        "/careers",
+        json={"title": "Backend Developer"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_project_submission_review_denied_for_learner():
+    client = create_client(submissions_api.router)
+
+    response = client.put(
+        "/project-submissions/1/review",
+        json={"status": "approved", "score": 90},
+    )
+
+    assert response.status_code == 403
+
+
+def test_mentor_can_reach_project_submission_review(monkeypatch):
+    from fastapi import HTTPException
+
+    client = create_client(submissions_api.router, role="mentor")
+
+    def missing_submission(**kwargs):
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    monkeypatch.setattr(
+        submissions_api,
+        "review_project_submission",
+        missing_submission,
+    )
+
+    response = client.put(
+        "/project-submissions/1/review",
+        json={"status": "approved", "score": 90},
+    )
+
+    assert response.status_code == 404

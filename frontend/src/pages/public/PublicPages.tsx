@@ -28,7 +28,36 @@ export function LandingPage() {
 }
 
 function AuthArt({ register = false }: { register?: boolean }) {
-  return <aside className="auth-art"><div className="auth-art-noise" /><Link to="/" className="auth-art-brand"><span className="brand-mark"><GraduationCap size={19} /></span>skill<span>forge</span></Link><div className="auth-art-content"><div className="art-symbol"><div className="art-symbol-core"><Sparkles size={24} /></div><i /><i /><i /></div><div className="eyebrow">{register ? 'START WITH A SINGLE STEP' : 'YOUR WORK HAS MOMENTUM'}</div><h2>{register ? 'Good things start with a plan.' : 'Look how far youâ€™ve already come.'}</h2><p>{register ? 'Build a learning path around the career you want, not just the courses you can find.' : 'Your skills are adding up. Keep building the proof that makes your next move possible.'}</p><div className="auth-quote"><span>â€œ</span><div><strong>{register ? 'Progress looks good on you.' : 'I finally know what to focus on.'}</strong><small>{register ? 'Your next chapter is yours to shape.' : 'Maya R. Â· Product design learner'}</small></div></div></div><div className="auth-art-foot"><span>LEARN WITH INTENTION</span><i /><span>GROW WITH CONFIDENCE</span><i /><span>MOVE WITH PROOF</span></div></aside>
+  return (
+    <aside className="auth-art">
+      <div className="auth-art-noise" />
+      <Link to="/" className="auth-art-brand">
+        <span className="brand-mark"><GraduationCap size={19} /></span>
+        skill<span>forge</span>
+      </Link>
+      <div className="auth-art-content">
+        <div className="art-symbol">
+          <div className="art-symbol-core"><Sparkles size={24} /></div>
+          <i /><i /><i />
+        </div>
+        <div className="eyebrow">{register ? 'START WITH A SINGLE STEP' : 'YOUR WORK HAS MOMENTUM'}</div>
+        <h2>{register ? 'Good things start with a plan.' : "Look how far you've already come."}</h2>
+        <p>{register ? 'Build a learning path around the career you want, not just the courses you can find.' : 'Your skills are adding up. Keep building the proof that makes your next move possible.'}</p>
+        <div className="auth-quote">
+          <span>&ldquo;</span>
+          <div>
+            <strong>{register ? 'Progress looks good on you.' : 'I finally know what to focus on.'}</strong>
+            <small>{register ? 'Your next chapter is yours to shape.' : 'Maya R. | Product design learner'}</small>
+          </div>
+        </div>
+      </div>
+      <div className="auth-art-foot">
+        <span>LEARN WITH INTENTION</span><i />
+        <span>GROW WITH CONFIDENCE</span><i />
+        <span>MOVE WITH PROOF</span>
+      </div>
+    </aside>
+  )
 }
 
 export function LoginPage() {
@@ -103,7 +132,36 @@ export function LoginPage() {
 export function RegisterPage() {
   const navigate = useNavigate(); const [error, setError] = useState('')
   const onSubmit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const data = new FormData(event.currentTarget); const name = String(data.get('name') ?? '').trim(); const email = String(data.get('email') ?? '').trim(); const password = String(data.get('password') ?? ''); if (!name || !email) { setError('Add your name and a valid email address to continue.'); return }; if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Enter a valid email address.'); return }; if (password.length < 8) { setError('Choose a password with at least 8 characters.'); return }; if (data.get('consent') !== 'on') { setError('Accept the terms to create your account.'); return }; setError(''); signUp(name, email, password).then(() => navigate(session.role === 'admin' ? '/admin' : '/app/dashboard')).catch((e: Error) => setError(e.message)) }
-  return <main className="auth-page"><section className="auth-form-side"><div className="auth-mobile-brand"><Link to="/" className="brand-lockup"><span className="brand-mark"><GraduationCap size={18} /></span><span>skill<span>forge</span></span></Link></div><div className="auth-form-wrap"><div className="auth-heading"><Badge tone="primary"><Sparkles size={12} /> BUILD YOUR MOMENTUM</Badge><h1>Make room for<br />whatâ€™s next.</h1><p>Your personalized path to a career youâ€™re excited about starts here.</p></div><form className="auth-form" onSubmit={onSubmit} noValidate><Input label="Your name" name="name" placeholder="Jordan Lee" autoComplete="name" required /><Input label="Work or personal email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required /><Input label="Create a password" name="password" type="password" placeholder="At least 8 characters" autoComplete="new-password" required hint="Use 8 or more characters." />{error && <div className="form-alert" role="alert">{error}</div>}<label className="check-label consent-check"><input type="checkbox" name="consent" required /> I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a>.</label><Button type="submit" size="lg" className="auth-submit">Create your account <ArrowRight size={16} /></Button><p className="auth-switch">Already have an account? <Link to="/login">Sign in <ArrowUpRight size={13} /></Link></p></form></div><p className="auth-legal">Your learning data stays yours. Always.</p></section><AuthArt register /></main>
+  return (
+    <main className="auth-page">
+      <section className="auth-form-side">
+        <div className="auth-mobile-brand">
+          <Link to="/" className="brand-lockup">
+            <span className="brand-mark"><GraduationCap size={18} /></span>
+            <span>skill<span>forge</span></span>
+          </Link>
+        </div>
+        <div className="auth-form-wrap">
+          <div className="auth-heading">
+            <Badge tone="primary"><Sparkles size={12} /> BUILD YOUR MOMENTUM</Badge>
+            <h1>Make room for<br />what's next.</h1>
+            <p>Your personalized path to a career you're excited about starts here.</p>
+          </div>
+          <form className="auth-form" onSubmit={onSubmit} noValidate>
+            <Input label="Your name" name="name" placeholder="Jordan Lee" autoComplete="name" required />
+            <Input label="Work or personal email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
+            <Input label="Create a password" name="password" type="password" placeholder="At least 8 characters" autoComplete="new-password" required hint="Use 8 or more characters." />
+            {error && <div className="form-alert" role="alert">{error}</div>}
+            <label className="check-label consent-check"><input type="checkbox" name="consent" required /> I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a>.</label>
+            <Button type="submit" size="lg" className="auth-submit">Create your account <ArrowRight size={16} /></Button>
+            <p className="auth-switch">Already have an account? <Link to="/login">Sign in <ArrowUpRight size={13} /></Link></p>
+          </form>
+        </div>
+        <p className="auth-legal">Your learning data stays yours. Always.</p>
+      </section>
+      <AuthArt register />
+    </main>
+  )
 }
 
 export function CertificateVerifyPage() {

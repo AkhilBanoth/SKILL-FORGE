@@ -5,9 +5,6 @@ from jose import jwt
 from app.config import settings
 
 
-ALGORITHM = "HS256"
-
-
 def create_access_token(user_id: int) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -21,5 +18,5 @@ def create_access_token(user_id: int) -> str:
     return jwt.encode(
         payload,
         settings.SECRET_KEY,
-        algorithm=ALGORITHM,
+        algorithm=settings.JWT_ALGORITHM,
     )

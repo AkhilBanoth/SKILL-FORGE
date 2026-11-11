@@ -1,17 +1,22 @@
 
 from datetime import datetime
+from types import SimpleNamespace
 
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from app.api import courses as courses_api
 from app.database.postgres import get_db
+from app.dependencies import get_current_user
 
 
 def create_test_client():
     app = FastAPI()
     app.include_router(courses_api.router)
     app.dependency_overrides[get_db] = lambda: None
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
+        id=1, role="admin", is_active=True
+    )
     return TestClient(app)
 
 
@@ -135,3 +140,26 @@ def test_create_course_rejects_invalid_duration():
     )
 
     assert response.status_code == 422
+
+
+def test_create_course_denied_for_learner():
+    app = FastAPI()
+    app.include_router(courses_api.router)
+    app.dependency_overrides[get_db] = lambda: None
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
+        id=1, role="learner", is_active=True
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/courses",
+        json={
+            "title": "Python Fundamentals",
+            "description": "Learn Python basics",
+            "skill_id": None,
+            "level": "Beginner",
+            "duration_hours": 10,
+        },
+    )
+
+    assert response.status_code == 403

@@ -9,6 +9,7 @@ from app.schemas.project_submission import (
     ProjectSubmissionResponse,
     ProjectSubmissionReview,
 )
+from app.security.rbac import require_role
 from app.services.project_submission_service import (
     create_new_submission,
     get_my_submissions,
@@ -24,7 +25,7 @@ router = APIRouter(
 
 
 def is_admin_user(user: User) -> bool:
-    return getattr(user, "role", None) == "admin"
+    return (getattr(user, "role", "") or "").strip().lower() in {"admin", "mentor"}
 
 
 @router.post(
@@ -88,7 +89,7 @@ def review_submission_endpoint(
     submission_id: int,
     review_data: ProjectSubmissionReview,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("admin", "mentor")),
 ):
     return review_project_submission(
         db=db,

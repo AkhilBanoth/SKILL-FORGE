@@ -77,11 +77,7 @@ app = FastAPI(
 # CORS configuration for local development and deployed frontend.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://skill-forge-mi6w.vercel.app",
-    ],
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

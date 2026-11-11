@@ -1,9 +1,11 @@
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from types import SimpleNamespace
 
 from app.api import course_modules as course_modules_api
 from app.database.postgres import get_db
+from app.dependencies import get_current_user
 
 
 def create_test_client():
@@ -11,6 +13,9 @@ def create_test_client():
     app.include_router(course_modules_api.router)
 
     app.dependency_overrides[get_db] = lambda: None
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
+        id=1, role="admin", is_active=True
+    )
 
     return TestClient(app)
 

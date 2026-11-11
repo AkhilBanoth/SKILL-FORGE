@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
+from app.models.user import User
 from app.schemas.resource import ResourceCreate, ResourceResponse
+from app.security.rbac import require_role
 from app.services.resource_service import (
     create_new_resource,
     get_resource,
@@ -24,6 +26,7 @@ def create_resource_endpoint(
     lesson_id: int,
     payload: ResourceCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return create_new_resource(
         db=db,

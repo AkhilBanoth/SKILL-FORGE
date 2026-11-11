@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
+from app.models.user import User
 from app.schemas.lesson import LessonCreate, LessonResponse
+from app.security.rbac import require_role
 from app.services.lesson_service import (
     create_new_lesson,
     get_lesson,
@@ -25,6 +27,7 @@ def create_lesson_endpoint(
     module_id: int,
     payload: LessonCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return create_new_lesson(
         db=db,

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.postgres import get_db
+from app.models.user import User
+from app.security.rbac import require_role
 from app.schemas.assignment import AssignmentCreate, AssignmentResponse
 from app.services.assignment_service import (
     create_new_assignment,
@@ -24,6 +26,7 @@ def create_assignment_endpoint(
     lesson_id: int,
     payload: AssignmentCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
 ):
     return create_new_assignment(
         db=db,
