@@ -24,16 +24,11 @@ class Settings(BaseSettings):
 
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-3.6-flash"
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
     )
-
-    @property
-    def allowed_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
     @model_validator(mode="after")
     def validate_production_settings(self):
@@ -51,10 +46,6 @@ class Settings(BaseSettings):
                 for marker in ("db_host", "user:password", "replace", "placeholder")
             ):
                 raise ValueError("Production DATABASE_URL must not contain placeholders")
-            if not self.allowed_origins or "*" in self.allowed_origins:
-                raise ValueError("Production requires explicit ALLOWED_ORIGINS")
-            if any("your-" in origin or "example.com" in origin for origin in self.allowed_origins):
-                raise ValueError("Production ALLOWED_ORIGINS must not contain placeholders")
         return self
 
 

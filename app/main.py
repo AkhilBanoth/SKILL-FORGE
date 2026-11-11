@@ -1,5 +1,4 @@
 
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
@@ -72,15 +71,6 @@ app = FastAPI(
     version="1.0.0",
     description="AI Learning, Certification & Career Readiness Platform",
     lifespan=lifespan,
-)
-
-# CORS configuration for local development and deployed frontend.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 # Register all existing API routers.

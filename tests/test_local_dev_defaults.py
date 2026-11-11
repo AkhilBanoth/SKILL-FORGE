@@ -31,7 +31,6 @@ def test_production_settings_reject_placeholder_secret():
             ENVIRONMENT="production",
             DATABASE_URL="postgresql://user:pass@db.example.net/skillforge",
             SECRET_KEY="replace-with-a-strong-random-secret",
-            ALLOWED_ORIGINS="https://app.skillforge.example",
         )
 
 
@@ -43,5 +42,4 @@ def test_production_settings_reject_placeholder_database_url():
             ENVIRONMENT="production",
             DATABASE_URL="postgresql://USER:PASSWORD@DB_HOST:5432/skillforge",
             SECRET_KEY="a-secure-random-secret-that-is-long-enough-123456",
-            ALLOWED_ORIGINS="https://app.skillforge.io",
         )

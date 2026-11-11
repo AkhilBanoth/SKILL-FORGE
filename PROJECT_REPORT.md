@@ -1,40 +1,49 @@
-# SkillForge Project Report
+# SkillForge – Backend Project Report
 
-## Executive summary
-SkillForge is a FastAPI-based learning platform with AI-powered recommendations, mentorship, course management, project tracking, certifications, and career-readiness analytics. It combines a modular backend with a Vite-based frontend and is structured to support a production-ready educational platform with role-aware access and domain-specific services.
+## 1. Project Overview
 
-## Architecture overview
-- Backend: FastAPI application with modular routers, repositories, services, and SQLAlchemy models.
-- Data layer: PostgreSQL for primary application data and MongoDB for auxiliary data flows.
-- AI layer: Gemini integration with graceful fallback behavior when the API key is missing.
-- Frontend: React + Vite interface served separately from the backend.
+SkillForge is an AI-powered learning, certification, and career-readiness platform. This repository contains the backend application, which provides REST APIs for user management, skills, careers, learning resources, assessments, projects, certifications, and AI-powered assistance.
 
-## Key improvements completed
-- Preserved SQLite and no-key AI fallbacks for local development.
-- Added `.env.example` and production startup validation for signing secrets, PostgreSQL URLs, and explicit non-placeholder CORS origins.
-- Routed JWT signing/verification and Gemini credentials/model selection through centralized settings.
-- Restricted catalog and learning-content writes to admins, project-submission review to admins/mentors, and retained user-scoped checks for learner-owned workflows.
-- Made CORS origins fully environment-driven.
+## 2. Technology Stack
 
-## Security posture
-Sensitive management writes are role-protected, project review is restricted to admin/mentor roles, and user-owned operations use the authenticated user identity. Production still depends on correctly provisioned roles and deployment secrets; add audit logging for privileged actions and retain scheduled key rotation.
+- **Backend Framework:** Python FastAPI
+- **Database:** PostgreSQL with SQLAlchemy
+- **Additional Database:** MongoDB
+- **Authentication:** JWT Bearer authentication
+- **AI Integration:** Google Gemini API
+- **Testing:** Pytest
 
-## Validation status
-The full backend suite passes: **115 tests passed**. Production configuration rejection tests cover placeholder secrets and database URLs. Local app startup and the health endpoint were verified previously; production connectivity was not tested because real database, MongoDB, and Gemini credentials are deployment-specific. The local SQLite fallback is development-only; production requires PostgreSQL.
+## 3. Backend Modules
 
-## Risk assessment
-Main risks include:
-- missing or weak environment secrets,
-- misconfigured database connectivity,
-- overexposed API origins,
-- missing or incorrectly assigned admin/mentor roles,
-- AI service outages when external keys are absent or invalid,
-- schema changes without a dedicated migration workflow; the current startup path calls SQLAlchemy `create_all`.
+- User registration, login, and profile management
+- Role-based access control
+- Skills and career management
+- Skill-gap analysis and career readiness
+- Courses, modules, lessons, and learning resources
+- Assessments and project submissions
+- Certifications and notifications
+- Analytics and AI mentor services
 
-## Recommendation
-Proceed to a staged deployment only after all template placeholders are replaced, PostgreSQL and required MongoDB services are reachable, CORS is limited to the deployed frontend, and admin/mentor roles are provisioned and smoke-tested. Add migration tooling before controlled schema evolution and use a managed secret store rather than committing `.env` values.
+## 4. Security
 
-## Deliverables summary
-- Production environment template: `.env.example`
-- Deployment guide: `DEPLOYMENT_CHECKLIST.md`
-- Final project overview: `PROJECT_REPORT.md`
+- JWT-based authentication
+- Protected API endpoints
+- Role-based authorization
+- Environment-based configuration
+- Production validation for secure JWT secrets and PostgreSQL configuration
+
+## 5. Database
+
+PostgreSQL stores the primary application data through SQLAlchemy models. MongoDB supports additional application data and services.
+
+## 6. AI Capabilities
+
+Google Gemini integration supports AI mentor responses, question generation, recommendations, and project assistance.
+
+## 7. Testing
+
+The backend includes automated Pytest coverage for authentication, users, skills, courses, assessments, projects, certifications, and AI services.
+
+## 8. Deployment
+
+The backend is designed to run as an independent FastAPI service. Configuration and credentials are supplied through environment variables. The API provides a health endpoint and interactive documentation at `/docs`.
