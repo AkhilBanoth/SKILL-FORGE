@@ -14,3 +14,6 @@ skillforge.db
 # Runtime logs and unnecessary Node.js files
 /logs/
 /package-lock.json
+!.env.example
+.env
+.env.*
