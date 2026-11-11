@@ -11,3 +11,6 @@ dist/
 skillforge.db
 *.db
 /frontend/
+# Runtime logs and unnecessary Node.js files
+/logs/
+/package-lock.json
