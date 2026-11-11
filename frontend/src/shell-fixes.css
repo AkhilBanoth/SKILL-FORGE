@@ -1,6 +1,0 @@
-@media (max-width: 1050px) {
-  .mobile-drawer-nav .side-link > span:not(.nav-count) { display: inline; }
-  .mobile-drawer-nav .side-link { justify-content: flex-start; padding-inline: 11px; }
-  .mobile-drawer-nav .streak-card { display: block; }
-  .mobile-drawer-nav .sidebar-bottom { align-items: stretch; }
-}

@@ -1,5 +1,0 @@
-.admin-page { min-width: 0; grid-template-columns: minmax(0, 1fr); }
-.admin-page > * { min-width: 0; max-width: 100%; }
-.admin-table-card { width: 100%; min-width: 0; overflow: hidden; }
-.table-wrap, .table-scroll { min-width: 0; max-width: 100%; }
-.table-scroll { overflow-x: auto; }
